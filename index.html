@@ -11,16 +11,18 @@
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="css/normalize.min.css">
   <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/style.css">
 
   <script src="js/vendor/modernizr-2.6.1.min.js"></script>
 </head>
 <body>
+
   <!--[if lt IE 7]>
       <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
   <![endif]-->
 
-  <canvas id="canvas_cam"></canvas>
-  <video id="video_cam"></video>
+  <div class="screen"><canvas id="canvas_cam" width="640" height="480"></canvas></div>
+  <div class="screen"><video id="video_cam"></video></div>
 
   <script src="js/vendor/jquery-1.8.0.min.js"></script>
   <!-- <script src="js/vendor/trackingjs/tracking.js"></script>
@@ -45,11 +47,36 @@
 
     var successCallback = function(media){
       console.log('------------success');
-      console.log(media);
+      //console.log(media);
 
       var video = document.querySelector('#video_cam');
       video.src = window.webkitURL.createObjectURL(media);
       video.play();
+
+      window.filterCount = 0;
+      var changeFilter = function(event){
+        element = event.target;
+        var filters = ['sepia', 'blur', 'huerotate', 'greyscale'];
+
+        var randomize = function(max, base){
+          return Math.floor(Math.random() * base % (max + 1)  );
+        }
+
+        element.className = filters[(window.filterCount++) % 3];
+        console.log(element.className);
+      }
+
+      video.addEventListener('click', changeFilter,  false);
+
+      /* copying the frames to canvas */
+      setInterval(function(){
+        var canvas = document.querySelector('#canvas_cam');
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect();
+        console.log(video);
+        ctx.drawImage(video, 0 , 0);
+      }, 100);
+
     };
 
     var errorCallback = function(error){
