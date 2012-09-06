@@ -1,0 +1,19 @@
+body{background-color: black; padding: 30px;}
+.screen{border: 1px solid red; display: inline-block;}
+.screen, video, canvas{width: 640px; height: 480px;}
+
+.sepia{
+    -webkit-filter: sepia(100%);
+}
+.greyscale{
+    -webkit-filter: greyscale(100%);
+}
+.blur{
+    -webkit-filter: blur(5px);
+}
+.transparent{
+    -webkit-filter: opacity(80%);
+}
+.huerotate{
+    -webkit-filter: hue-rotate(130deg);
+}
