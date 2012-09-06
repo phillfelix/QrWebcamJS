@@ -19,8 +19,8 @@
       <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
   <![endif]-->
 
-  <canvas id="canvas_cam"></canvas>
-  <video id="video_cam"></video>
+  <canvas id="canvas_cam" width="640" height="480"></canvas>
+  <video id="video_cam" width="640" height="480" style="display:none;"></video>
 
   <script src="js/vendor/jquery-1.8.0.min.js"></script>
   <!-- <script src="js/vendor/trackingjs/tracking.js"></script>
@@ -29,39 +29,149 @@
   <script src="js/main.js"></script>
   <script>
 
-  function hasGetUserMedia() {
-    // Note: Opera builds are unprefixed.
-    return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
-              navigator.mozGetUserMedia || navigator.msGetUserMedia);
-  }
-  
-  function normalizeGetUserMedia(){
-    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
-                              navigator.mozGetUserMedia || navigator.msGetUserMedia;
-  }
+  /*requestAnimationFrame shield*/
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = 
+          window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+    }
+ 
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+              timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+ 
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());
 
-  if(hasGetUserMedia()){
-    normalizeGetUserMedia();
 
-    var successCallback = function(media){
-      console.log('------------success');
-      console.log(media);
 
-      var video = document.querySelector('#video_cam');
-      video.src = window.webkitURL.createObjectURL(media);
-      video.play();
-    };
 
-    var errorCallback = function(error){
-      console.log('------------error');
-      console.log(error);
-    };
+/*gUMShield*/
+window.URL || (window.URL = window.webkitURL || window.msURL || window.oURL);
+//normalize navigator.getUserMedia
+navigator.getUserMedia || (navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
 
-    navigator.getUserMedia({video: true}, successCallback, errorCallback);
+var _getUserMedia = function(opts, success, fail) {
+    if (!navigator.getUserMedia) fail(new Error("getUserMedia not supported"));
 
-  } else {
-    console.log('getUserMedia não suportado');
-  }
+    try {
+      navigator.getUserMedia(opts, success, fail);
+    } catch (e) {
+      var stringopts = [];
+      for (var i in opts) {
+        if (opts[i] == true) {
+          stringopts.push(i);
+        }
+      }
+      stringopts = stringopts.join(",");
+      try {
+        navigator.getUserMedia(stringopts, success, fail);
+      } catch (e) {
+        fail(new Error("getUserMedia not supported"));
+      }
+    }
+  };
+
+window.count = 0;
+var Start = function(){
+    //if(window.count>1)
+      //return;
+    //console.log("hey");
+    var ctx = window.ctx,
+        video = window.video,
+        canvas = window.canvas;
+    requestAnimationFrame(Start); 
+    //setInterval(Start,100);
+    ctx.drawImage(video, 0, 0, video.width, video.height, 0, 0, canvas.width, canvas.height);
+    //if(window.count === 0){
+      var i = ctx.getImageData(0, 0, canvas.width, canvas.height),
+          data = i.data;
+      var r,g,b,a;
+      for (var y = 0, h = canvas.height; y < h; ++y) {
+          for (var x = 0; x < canvas.width; ++x) {
+              var index = (y * canvas.width + x) * 4;
+              
+              var range = 90;
+              if(data[r = index] >= (255 - range) && data[g = ++index] >= (255 - range) && data[b = ++index] >= (255 - range) ){
+              //if(data[r = index] === (255 - range) && data[g = ++index] === (255 - range) && data[b = ++index] === (255 - range) ){
+              //if(data[r = index] === 255 && data[g = ++index] === 255 && data[b = ++index] === 255 ){
+                //console.log("ACHEI O PIXEL BRANCOOOOOOOOOOOoo!");
+                data[r] = 127;
+                data[g] = 255;
+                data[b] = 212;
+                data[a] = 255;                
+                //console.log("PINTEI O PIXEL!");
+              } else if(data[r = index] >= (150 - range) && data[g = ++index] >= (100 - range) && data[b = ++index] >= (100 - range) ){
+                
+              //if(data[r = index] === (255 - range) && data[g = ++index] === (255 - range) && data[b = ++index] === (255 - range) ){
+              //if(data[r = index] === 255 && data[g = ++index] === 255 && data[b = ++index] === 255 ){
+                //console.log("ACHEI O PIXEL BRANCOOOOOOOOOOOoo!");
+                data[r] = (data[r] + 80) & 0xff;
+                //data[g] = 255;
+                //data[b] = 212;
+                data[a] = 255;                
+                //console.log("PINTEI O PIXEL!");
+              }
+
+
+              //data[index] = 50 & 0xff;
+              /*var index = (y * canvas.width + x) * 4;
+
+              var value = x * y & 0xff;
+
+              data[index]   = value;    // red
+              data[++index] = value;    // green
+              data[++index] = value;    // blue
+              data[++index] = 255;      // alpha*/
+          }
+      }
+      ctx.putImageData(i, 0, 0);
+      window.count++;  
+    //}
+    
+};
+
+var successCallback = function(media) {
+    console.log('------------success');
+    console.log(media);
+    console.log(window.video);
+    var video = document.querySelector('#video_cam');
+    /*TODO - normalizar URL object, firefox (na minha build do nightly) não necessita o uso o URL object*/
+    video.src = media;//firefox
+    //video.src = window.URL.createObjectURL(media); //chrome
+    video.play();
+    var canvas = document.querySelector("#canvas_cam");
+    var ctx = canvas.getContext('2d');    
+    window.ctx = ctx;
+    window.video = video;
+    window.canvas = canvas;     
+    Start();
+    /*setInterval(function() {
+      ctx.drawImage(video, 0, 0, video.width, video.height, 0, 0, canvas.width, canvas.height);
+    }, 67);*/
+
+  };
+
+var errorCallback = function(error) {
+    console.log('------------error');
+    console.log(error);
+  };
+
+_getUserMedia({
+  video: true
+}, successCallback, errorCallback);
 
   </script>
 </body>
